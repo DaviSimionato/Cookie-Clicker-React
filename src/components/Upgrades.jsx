@@ -1,6 +1,11 @@
 import { useState } from 'react'
-import { CLICK_UPGRADES, BUILDING_UPGRADES, isUnlocked } from '../data/upgrades'
-import { BUILDINGS, formatNumber } from '../data/buildings'
+import {
+  CLICK_UPGRADES,
+  BUILDING_UPGRADES,
+  isUnlocked,
+  describeClickUpgrade,
+} from '../data/upgrades'
+import { BUILDINGS, formatNumber, formatValue } from '../data/buildings'
 import { useSettings } from '../SettingsContext'
 
 export default function Upgrades({ cookies, owned, bought, clickValue, onBuy }) {
@@ -47,12 +52,12 @@ export default function Upgrades({ cookies, owned, bought, clickValue, onBuy }) 
       {tab === 'click' && (
         <>
           {/* <> </> é um "Fragment": agrupa elementos sem criar uma div extra */}
-          <p className="panel-subtitle">Cada clique vale {formatNumber(clickValue, shortNumbers)} 🍪</p>
+          <p className="panel-subtitle">Cada clique vale {formatValue(clickValue, shortNumbers)} 🍪</p>
           {CLICK_UPGRADES.map((upgrade) => (
             <UpgradeItem
               key={upgrade.id}
               upgrade={upgrade}
-              description={`cliques ×${upgrade.multiplier}`}
+              description={describeClickUpgrade(upgrade)}
               isBought={bought.includes(upgrade.id)}
               cookies={cookies}
               onBuy={onBuy}

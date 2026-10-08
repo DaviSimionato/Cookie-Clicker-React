@@ -1,16 +1,18 @@
 import { BUILDINGS } from './buildings'
 
 // ---------- Upgrades de clique ----------
-// Cada um é comprado UMA vez e multiplica o valor do clique.
+// Cada um é comprado UMA vez e melhora o valor do clique de um destes jeitos:
 //   cost:       preço (fixo, não aumenta)
 //   multiplier: quanto multiplica o valor de cada clique
+//   cpsPercent: cada clique ganha TAMBÉM essa fração da produção por segundo
+//               (0.1 = +10% dos cookies/s a cada clique)
 export const CLICK_UPGRADES = [
   { id: 'reinforced-finger', name: 'Dedo reforçado', emoji: '☝️', cost: 100, multiplier: 2 },
   { id: 'oven-mitt', name: 'Luva de forno', emoji: '🧤', cost: 500, multiplier: 2 },
   { id: 'ergonomic-mouse', name: 'Mouse ergonômico', emoji: '🖱️', cost: 10000, multiplier: 2 },
   { id: 'golden-hand', name: 'Mão de ouro', emoji: '✋', cost: 100000, multiplier: 2 },
   { id: 'diamond-mouse', name: 'Mouse de diamante', emoji: '💎', cost: 1000000, multiplier: 2 },
-  { id: 'luva-of-pedreiro', name: 'Luva de pedreiro', emoji: '🧤', cost: 10000000, multiplier: 2 },
+  { id: 'luva-of-pedreiro', name: 'Luva de pedreiro', emoji: '🧤', cost: 10000000, cpsPercent: 0.1 },
 ]
 
 // ---------- Upgrades de construções ----------
@@ -58,14 +60,25 @@ export function isUnlocked(upgrade, owned) {
 }
 
 // Multiplica os "multiplier" de uma lista de upgrades: [×2, ×2, ×2] -> 8
+// Upgrades sem "multiplier" (como os de cpsPercent) contam como ×1.
 function totalMultiplier(upgrades) {
-  return upgrades.reduce((value, u) => value * u.multiplier, 1)
+  return upgrades.reduce((value, u) => value * (u.multiplier ?? 1), 1)
 }
 
-// Valor de um clique = 1 × multiplicadores de todos os upgrades de clique comprados.
-// Ex.: comprou os 2 primeiros -> 1 × 2 × 2 = 4 cookies por clique.
-export function getClickValue(boughtIds) {
-  return totalMultiplier(CLICK_UPGRADES.filter((u) => boughtIds.includes(u.id)))
+// Valor de um clique = (1 × multiplicadores) + (porcentagens × cookies por segundo)
+// Ex.: comprou os 2 primeiros (×2, ×2) e a Luva de pedreiro (+10% do CpS),
+// produzindo 500/s -> 1 × 2 × 2 + 0,1 × 500 = 4 + 50 = 54 cookies por clique.
+export function getClickValue(boughtIds, cps) {
+  const bought = CLICK_UPGRADES.filter((u) => boughtIds.includes(u.id))
+  const base = totalMultiplier(bought)
+  const cpsBonus = bought.reduce((total, u) => total + (u.cpsPercent ?? 0), 0) * cps
+  return base + cpsBonus
+}
+
+// Texto curto do efeito de um upgrade de clique: "cliques ×2" ou "cliques +10% do CpS"
+export function describeClickUpgrade(upgrade) {
+  if (upgrade.cpsPercent) return `cliques +${upgrade.cpsPercent * 100}% dos cookies/s`
+  return `cliques ×${upgrade.multiplier}`
 }
 
 // Quanto UMA unidade da construção produz por segundo, já com os upgrades.

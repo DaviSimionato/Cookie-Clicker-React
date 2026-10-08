@@ -57,3 +57,9 @@ export function formatDuration(totalSeconds) {
 export function formatDecimal(n) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 }
+
+// Valores que podem ter fração (ex.: valor do clique): abaixo de 1000 mostra
+// 1 casa decimal ("1,3"); acima, usa o formato normal ("12.345" ou "1,23 milhões")
+export function formatValue(n, short = true) {
+  return n < 1000 ? formatDecimal(n) : formatNumber(n, short)
+}

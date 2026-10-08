@@ -7,7 +7,7 @@ import SettingsModal from './components/SettingsModal'
 import Toggle from './components/Toggle'
 import WelcomeBack from './components/WelcomeBack'
 import { SettingsContext } from './SettingsContext'
-import { BUILDINGS, getCost, formatNumber, formatDecimal } from './data/buildings'
+import { BUILDINGS, getCost, formatNumber, formatDecimal, formatValue } from './data/buildings'
 import { ALL_UPGRADES, getClickValue, getTotalCps, isUnlocked } from './data/upgrades'
 import {
   NEW_GAME,
@@ -79,7 +79,8 @@ export default function App() {
   // Valores DERIVADOS: não precisam de estado, são calculados a partir do estado
   // existente toda vez que o componente renderiza.
   const cps = getTotalCps(owned, upgrades)
-  const clickValue = getClickValue(upgrades)
+  // depende do cps por causa de upgrades como a Luva de pedreiro (+10% do CpS por clique)
+  const clickValue = getClickValue(upgrades, cps)
 
   // useEffect roda código "fora" da renderização: timers, salvar dados, etc.
   // Este cria um timer que adiciona cookies automaticamente.
@@ -244,7 +245,7 @@ export default function App() {
     if (!showFloater || !settings.showFloaters) return
 
     // Nunca modifique o estado diretamente (floaters.push). Sempre crie um novo array.
-    const text = `+${formatNumber(clickValue, settings.shortNumbers)}`
+    const text = `+${formatValue(clickValue, settings.shortNumbers)}`
     const floater = { id: nextFloaterId++, x, y, text }
     setFloaters((prev) => [...prev, floater])
 
