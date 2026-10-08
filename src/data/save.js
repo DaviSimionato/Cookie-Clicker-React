@@ -1,13 +1,25 @@
 import { BUILDINGS } from './buildings'
-import { ALL_UPGRADES, getTotalCps } from './upgrades'
+import { getUpgradeById, getTotalCps } from './upgrades'
+import { ACHIEVEMENT_IDS } from './achievements'
 
 const SAVE_KEY = 'cookie-clicker-save'
 
 // Versão do formato do save. Se um dia o formato mudar, dá para olhar este
 // número e converter saves antigos em sanitizeGame.
-const SAVE_VERSION = 1
+//   1: cookies, owned, upgrades
+//   2: + totalCookies, clicks, achievements
+const SAVE_VERSION = 2
 
-export const NEW_GAME = { version: SAVE_VERSION, cookies: 0, owned: {}, upgrades: [], savedAt: null }
+export const NEW_GAME = {
+  version: SAVE_VERSION,
+  cookies: 0,
+  totalCookies: 0, // cookies assados desde o início (gastar não diminui)
+  clicks: 0,
+  owned: {},
+  upgrades: [],
+  achievements: {}, // { idDaConquista: momento em que foi desbloqueada (ms) }
+  savedAt: null,
+}
 
 // Recebe QUALQUER coisa (vinda do localStorage, de um arquivo ou de um código colado)
 // e devolve um jogo válido — ou lança um erro com uma mensagem amigável.
@@ -29,16 +41,37 @@ export function sanitizeGame(raw) {
     if (Number.isFinite(count) && count > 0) owned[building.id] = count
   }
 
-  // Só aceita upgrades que existem, sem repetição (Set remove duplicados)
-  const validIds = ALL_UPGRADES.map((u) => u.id)
+  // Só aceita upgrades que existem, escritos exatamente como o jogo escreve
+  // (ex.: "grandma-01" não vale, só "grandma-1"), sem repetição (Set remove duplicados)
   const upgrades = Array.isArray(raw.upgrades)
-    ? [...new Set(raw.upgrades.filter((id) => validIds.includes(id)))]
+    ? [...new Set(raw.upgrades.filter((id) => getUpgradeById(id)?.id === id))]
     : []
+
+  // Estatísticas (saves da versão 1 não têm: começam do que dá para saber)
+  const totalCookies = Math.max(cookies, Number(raw.totalCookies) || 0)
+  const clicks = Math.max(0, Math.floor(Number(raw.clicks) || 0))
+
+  // Conquistas: só ids que existem, cada uma com uma data válida
+  const achievements = {}
+  if (raw.achievements && typeof raw.achievements === 'object') {
+    for (const [id, unlockedAt] of Object.entries(raw.achievements)) {
+      if (ACHIEVEMENT_IDS.has(id) && Number.isFinite(unlockedAt)) achievements[id] = unlockedAt
+    }
+  }
 
   // Momento do último save (em milissegundos). Saves antigos não têm: aí fica null.
   const savedAt = Number.isFinite(raw.savedAt) ? raw.savedAt : null
 
-  return { version: SAVE_VERSION, cookies, owned, upgrades, savedAt }
+  return {
+    version: SAVE_VERSION,
+    cookies,
+    totalCookies,
+    clicks,
+    owned,
+    upgrades,
+    achievements,
+    savedAt,
+  }
 }
 
 // ---------- localStorage (save do navegador) ----------
@@ -67,7 +100,11 @@ export function loadGameWithOfflineProgress() {
   if (seconds < AWAY_REPORT_SECONDS || produced <= 0) return { game, away: null }
 
   return {
-    game: { ...game, cookies: game.cookies + produced },
+    game: {
+      ...game,
+      cookies: game.cookies + produced,
+      totalCookies: game.totalCookies + produced,
+    },
     away: { seconds, cookies: produced },
   }
 }

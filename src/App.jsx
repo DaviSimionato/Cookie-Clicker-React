@@ -4,11 +4,15 @@ import Store from './components/Store'
 import Upgrades from './components/Upgrades'
 import Floaters from './components/Floaters'
 import SettingsModal from './components/SettingsModal'
+import AchievementsModal from './components/AchievementsModal'
+import AchievementToasts from './components/AchievementToasts'
+import Credits from './components/Credits'
 import Toggle from './components/Toggle'
 import WelcomeBack from './components/WelcomeBack'
 import { SettingsContext } from './SettingsContext'
 import { BUILDINGS, getCost, formatNumber, formatDecimal, formatValue } from './data/buildings'
-import { ALL_UPGRADES, getClickValue, getTotalCps, isUnlocked } from './data/upgrades'
+import { getUpgradeById, getClickValue, getTotalCps, isUnlocked } from './data/upgrades'
+import { ACHIEVEMENTS } from './data/achievements'
 import {
   NEW_GAME,
   AWAY_REPORT_SECONDS,
@@ -23,6 +27,10 @@ const AUTO_CLICKS_PER_SECOND = 5
 // Distância extra (em pixels) além da borda do cookie em que o "+1" do
 // auto-click ainda aparece
 const NEAR_COOKIE_MARGIN = 60
+// Se mais conquistas que isso forem desbloqueadas de uma vez (ex.: ao carregar
+// um save antigo), aparece um aviso só, resumindo, em vez de uma pilha enorme
+const MAX_TOASTS_AT_ONCE = 3
+const ACHIEVEMENT_CHECK_MS = 500
 
 // Contador simples para dar um id único a cada "+1".
 // (crypto.randomUUID() não funciona quando o site é aberto pelo IP da rede, como
@@ -73,6 +81,9 @@ export default function App() {
   const [floaters, setFloaters] = useState([])
   const [settings, setSettings] = useState(loadSettings)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [achievementsOpen, setAchievementsOpen] = useState(false)
+  // Avisos de conquista na tela: lista de { id, emoji, title, message }
+  const [toasts, setToasts] = useState([])
   // Horário do último save (null = ainda não salvou nesta sessão)
   const [lastSaved, setLastSaved] = useState(null)
 
@@ -100,7 +111,12 @@ export default function App() {
       lastTick = now
       // Forma "funcional" do setState: recebe o valor mais recente (prev).
       // Isso evita bugs com valores desatualizados dentro de timers.
-      setGame((prev) => ({ ...prev, cookies: prev.cookies + cps * seconds }))
+      const produced = cps * seconds
+      setGame((prev) => ({
+        ...prev,
+        cookies: prev.cookies + produced,
+        totalCookies: prev.totalCookies + produced,
+      }))
     }, 1000 / TICKS_PER_SECOND)
 
     // A função retornada é a "limpeza": roda antes do efeito rodar de novo
@@ -237,11 +253,66 @@ export default function App() {
       : 'Cookie Clicker'
   }, [cookies, settings.tabTitle, settings.shortNumbers])
 
+  // ---------- Conquistas ----------
+
+  // Confere se alguma conquista nova foi alcançada. São ~90 conferências simples,
+  // então rodar isso 2x por segundo é barato.
+  //
+  // Por que um timer e não um useEffect que roda quando "game" muda? Porque o
+  // efeito chamaria setGame logo depois de cada renderização, causando uma
+  // renderização extra "em cascata" (o linter avisa: set-state-in-effect).
+  // Com o timer, a conferência é um evento como outro qualquer.
+  const checkAchievements = useEffectEvent(() => {
+    const context = { game, cps, clickValue, autoClick }
+    // "in" confere se o objeto tem aquela chave: a conquista já foi desbloqueada?
+    const newlyUnlocked = ACHIEVEMENTS.filter(
+      (a) => !(a.id in game.achievements) && a.check(context),
+    )
+    if (newlyUnlocked.length === 0) return // nada novo: não muda nenhum estado
+
+    const now = Date.now()
+    setGame((prev) => {
+      const achievements = { ...prev.achievements }
+      // ??= só atribui se ainda não existir (protege contra desbloquear 2x)
+      for (const a of newlyUnlocked) achievements[a.id] ??= now
+      return { ...prev, achievements }
+    })
+
+    if (!settings.achievementToasts) return
+    const newToasts =
+      newlyUnlocked.length > MAX_TOASTS_AT_ONCE
+        ? [
+            {
+              id: `summary-${newlyUnlocked[0].id}-${newlyUnlocked.length}`,
+              emoji: '🏆',
+              title: `${newlyUnlocked.length} conquistas desbloqueadas!`,
+              message: 'Veja todas no botão 🏆 no canto da tela.',
+            },
+          ]
+        : newlyUnlocked.map(({ id, emoji, title, message }) => ({ id, emoji, title, message }))
+    // Não repete avisos que já estão na tela
+    setToasts((prev) => [...prev, ...newToasts.filter((t) => !prev.some((p) => p.id === t.id))])
+  })
+
+  useEffect(() => {
+    const id = setInterval(checkAchievements, ACHIEVEMENT_CHECK_MS)
+    return () => clearInterval(id)
+  }, [])
+
+  function dismissToast(id) {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }
+
   // ---------- Ações do jogo ----------
 
   // Recebe a posição (x, y) onde o "+1" deve aparecer
   function handleCookieClick(x, y, showFloater = true) {
-    setGame((prev) => ({ ...prev, cookies: prev.cookies + clickValue }))
+    setGame((prev) => ({
+      ...prev,
+      cookies: prev.cookies + clickValue,
+      totalCookies: prev.totalCookies + clickValue,
+      clicks: prev.clicks + 1,
+    }))
     if (!showFloater || !settings.showFloaters) return
 
     // Nunca modifique o estado diretamente (floaters.push). Sempre crie um novo array.
@@ -272,7 +343,8 @@ export default function App() {
 
   function handleBuyUpgrade(upgradeId) {
     setGame((prev) => {
-      const upgrade = ALL_UPGRADES.find((u) => u.id === upgradeId)
+      const upgrade = getUpgradeById(upgradeId)
+      if (!upgrade) return prev // id que não existe
       if (prev.upgrades.includes(upgradeId)) return prev // já comprado
       if (!isUnlocked(upgrade, prev.owned)) return prev // construções insuficientes
       if (prev.cookies < upgrade.cost) return prev
@@ -312,9 +384,16 @@ export default function App() {
           onBuy={handleBuyUpgrade}
         />
 
-        {/* Barra fixa no canto inferior direito: auto-click + configurações */}
+        {/* Barra fixa no canto inferior direito: auto-click + conquistas + configurações */}
         <div className="dock">
           <Toggle label="Auto-click" checked={autoClick} onChange={setAutoClick} />
+          <button
+            className="icon-button"
+            onClick={() => setAchievementsOpen(true)}
+            aria-label="Conquistas e estatísticas"
+          >
+            🏆
+          </button>
           <button
             className="icon-button settings-button"
             onClick={() => setSettingsOpen(true)}
@@ -328,7 +407,15 @@ export default function App() {
         {awayReport && (
           <WelcomeBack report={awayReport} onClose={() => setAwayReport(null)} />
         )}
+        <AchievementToasts toasts={toasts} onDismiss={dismissToast} />
         <Floaters items={floaters} />
+        <Credits />
+        <AchievementsModal
+          open={achievementsOpen}
+          onClose={() => setAchievementsOpen(false)}
+          game={game}
+          cps={cps}
+        />
         <SettingsModal
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}

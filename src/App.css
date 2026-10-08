@@ -315,7 +315,7 @@ button {
 }
 
 /* ---------- Janela de configurações ---------- */
-.settings {
+.modal {
   width: min(520px, calc(100% - 32px));
   max-height: calc(100dvh - 32px);
   padding: 0;
@@ -327,11 +327,11 @@ button {
 }
 
 /* ::backdrop é o fundo escuro atrás do <dialog> aberto */
-.settings::backdrop {
+.modal::backdrop {
   background: rgba(0, 0, 0, 0.6);
 }
 
-.settings-content {
+.modal-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -339,7 +339,7 @@ button {
 }
 
 /* Cabeçalho grudado no topo enquanto o conteúdo rola */
-.settings-header {
+.modal-header {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -350,12 +350,12 @@ button {
   background: var(--dialog-bg);
 }
 
-.settings-header h2 {
+.modal-header h2 {
   margin: 0;
   font-size: 1.3rem;
 }
 
-.settings-section {
+.modal-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -363,7 +363,7 @@ button {
   border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.settings-section h3 {
+.modal-section h3 {
   margin: 0;
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -371,13 +371,13 @@ button {
   opacity: 0.6;
 }
 
-.settings-section p {
+.modal-section p {
   margin: 0;
 }
 
 /* Linha "texto à esquerda, controle à direita" (quebra linha se não couber) */
 .settings-row,
-.settings-section .toggle {
+.modal-section .toggle {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -455,6 +455,178 @@ button {
   background: rgba(220, 70, 70, 0.3);
 }
 
+/* ---------- Seletor de tema ---------- */
+/* auto-fill + minmax: cabem quantas colunas der, cada uma com no mínimo 140px */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-option.active {
+  border-color: white;
+}
+
+/* Bolinha dividida na diagonal com as 2 cores do tema (vindas do style={{ '--a', '--b' }}) */
+.theme-swatch {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, var(--a) 50%, var(--b) 50%);
+}
+
+/* ---------- Conquistas e estatísticas ---------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.stats-grid dt {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.stats-grid dd {
+  margin: 0;
+  font-weight: bold;
+}
+
+.progress {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.progress > div {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.4s;
+}
+
+.achievement-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.achievement {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.achievement.locked {
+  opacity: 0.55;
+}
+
+.achievement.unlocked {
+  outline: 1px solid rgba(255, 215, 0, 0.35);
+}
+
+.achievement-emoji {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.achievement p {
+  margin: 2px 0;
+  font-size: 0.9rem;
+}
+
+/* ---------- Avisos de conquista (canto superior direito) ---------- */
+.achievement-toasts {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(360px, calc(100% - 32px));
+  pointer-events: none; /* a área vazia entre os avisos não bloqueia cliques */
+}
+
+.achievement-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 14px;
+  border-radius: 12px;
+  border-left: 4px solid gold;
+  background: var(--dialog-bg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  animation: achievement-in 0.35s ease-out;
+}
+
+.achievement-toast p {
+  flex: 1;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.achievement-toast small {
+  color: gold;
+}
+
+@keyframes achievement-in {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+/* ---------- Loja: construções ainda não reveladas ---------- */
+.hidden-buildings {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* ---------- Assinatura (parte de baixo, no centro) ---------- */
+/* No computador, os 2 painéis têm a mesma largura, então o centro da tela é
+   exatamente o centro da área do cookie */
+.credits {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  font-size: 0.8rem;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.credits a {
+  color: inherit;
+}
+
 /* Efeitos de "passar o mouse" só em aparelhos que TÊM mouse.
    No celular, o :hover "gruda" depois do toque e o botão fica com cara de selecionado. */
 @media (hover: hover) {
@@ -469,6 +641,12 @@ button {
   }
   .settings-button:hover {
     transform: rotate(60deg);
+  }
+  .theme-option:hover:not(.active) {
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+  .credits:hover {
+    opacity: 1;
   }
   .action-button:hover:not(:disabled) {
     background: var(--item-hover);
@@ -538,12 +716,12 @@ button {
   }
 
   /* No celular, a janela ocupa quase a tela toda */
-  .settings {
+  .modal {
     width: calc(100% - 16px);
     max-height: calc(100dvh - 16px);
   }
 
-  .settings-content {
+  .modal-content {
     padding: 0 16px 16px;
   }
 
@@ -555,5 +733,21 @@ button {
 
   .floater {
     font-size: 1.2rem;
+  }
+
+  /* No celular a assinatura vira o "rodapé" no fim da página, depois dos painéis */
+  .credits {
+    position: static;
+    order: 99;
+    transform: none;
+    padding: 16px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .achievement-toasts {
+    top: 8px;
+    right: 8px;
+    width: calc(100% - 16px);
   }
 }

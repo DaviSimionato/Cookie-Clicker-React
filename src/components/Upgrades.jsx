@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import {
-  CLICK_UPGRADES,
-  BUILDING_UPGRADES,
+  getNextClickUpgrades,
+  getNextBuildingUpgrade,
   isUnlocked,
   describeClickUpgrade,
+  countClickUpgrades,
 } from '../data/upgrades'
 import { BUILDINGS, formatNumber, formatValue } from '../data/buildings'
 import { useSettings } from '../SettingsContext'
+
+// Quantos upgrades de clique aparecem à venda ao mesmo tempo
+const CLICK_UPGRADES_SHOWN = 3
 
 export default function Upgrades({ cookies, owned, bought, clickValue, onBuy }) {
   // Estado LOCAL: qual aba está aberta. Só este painel se importa com isso.
@@ -14,20 +18,19 @@ export default function Upgrades({ cookies, owned, bought, clickValue, onBuy }) 
   // Lê as configurações do contexto (sem precisar recebê-las por props)
   const { shortNumbers } = useSettings()
 
-  // Para não mostrar 18 upgrades de uma vez, cada construção mostra apenas
-  // o PRÓXIMO upgrade ainda não comprado. .filter(Boolean) remove os "undefined"
-  // (construções com todos os upgrades já comprados).
-  const nextBuildingUpgrades = BUILDINGS.map((building) =>
-    BUILDING_UPGRADES.find((u) => u.buildingId === building.id && !bought.includes(u.id)),
-  ).filter(Boolean)
+  // Os upgrades são infinitos, então mostramos só os PRÓXIMOS:
+  // - clique: os 3 próximos ainda não comprados
+  // - construções: o próximo nível de cada construção que você já tem
+  const nextClickUpgrades = getNextClickUpgrades(bought, CLICK_UPGRADES_SHOWN)
+  const ownedBuildings = BUILDINGS.filter((b) => (owned[b.id] ?? 0) > 0)
+  const nextBuildingUpgrades = ownedBuildings.map((b) => getNextBuildingUpgrade(b, bought))
 
-  const boughtBuildingCount = BUILDING_UPGRADES.filter((u) => bought.includes(u.id)).length
+  const clickBoughtCount = countClickUpgrades(bought)
+  const buildingBoughtCount = bought.length - clickBoughtCount
 
   // Quantos upgrades dá pra comprar AGORA em cada aba (aparece como "bolinha" na aba)
   function countAvailable(upgrades) {
-    return upgrades.filter(
-      (u) => !bought.includes(u.id) && isUnlocked(u, owned) && cookies >= u.cost,
-    ).length
+    return upgrades.filter((u) => isUnlocked(u, owned) && cookies >= u.cost).length
   }
 
   return (
@@ -38,7 +41,7 @@ export default function Upgrades({ cookies, owned, bought, clickValue, onBuy }) 
         <TabButton
           label="👆 Clique"
           active={tab === 'click'}
-          badge={countAvailable(CLICK_UPGRADES)}
+          badge={countAvailable(nextClickUpgrades)}
           onClick={() => setTab('click')}
         />
         <TabButton
@@ -52,13 +55,15 @@ export default function Upgrades({ cookies, owned, bought, clickValue, onBuy }) 
       {tab === 'click' && (
         <>
           {/* <> </> é um "Fragment": agrupa elementos sem criar uma div extra */}
-          <p className="panel-subtitle">Cada clique vale {formatValue(clickValue, shortNumbers)} 🍪</p>
-          {CLICK_UPGRADES.map((upgrade) => (
+          <p className="panel-subtitle">
+            Cada clique vale {formatValue(clickValue, shortNumbers)} 🍪 · {clickBoughtCount}{' '}
+            {clickBoughtCount === 1 ? 'comprado' : 'comprados'}
+          </p>
+          {nextClickUpgrades.map((upgrade) => (
             <UpgradeItem
               key={upgrade.id}
               upgrade={upgrade}
               description={describeClickUpgrade(upgrade)}
-              isBought={bought.includes(upgrade.id)}
               cookies={cookies}
               onBuy={onBuy}
             />
@@ -69,7 +74,7 @@ export default function Upgrades({ cookies, owned, bought, clickValue, onBuy }) 
       {tab === 'buildings' && (
         <>
           <p className="panel-subtitle">
-            Comprados: {boughtBuildingCount}/{BUILDING_UPGRADES.length}
+            {buildingBoughtCount} {buildingBoughtCount === 1 ? 'comprado' : 'comprados'}
           </p>
           {nextBuildingUpgrades.map((upgrade) => {
             const building = BUILDINGS.find((b) => b.id === upgrade.buildingId)
@@ -82,16 +87,15 @@ export default function Upgrades({ cookies, owned, bought, clickValue, onBuy }) 
                 lockReason={
                   isUnlocked(upgrade, owned)
                     ? null
-                    : `Tenha ${upgrade.requires} ${unitName} (${owned[building.id] ?? 0}/${upgrade.requires})`
+                    : `Tenha ${upgrade.requires} ${unitName} (${owned[building.id]}/${upgrade.requires})`
                 }
-                isBought={false}
                 cookies={cookies}
                 onBuy={onBuy}
               />
             )
           })}
           {nextBuildingUpgrades.length === 0 && (
-            <p className="panel-subtitle">Todos os upgrades comprados! 🎉</p>
+            <p className="panel-subtitle">Compre construções na Loja para liberar upgrades.</p>
           )}
         </>
       )}
@@ -114,20 +118,19 @@ function TabButton({ label, active, badge, onClick }) {
 }
 
 // lockReason: texto explicando por que está bloqueado (ou null se liberado)
-function UpgradeItem({ upgrade, description, isBought, lockReason, cookies, onBuy }) {
+function UpgradeItem({ upgrade, description, lockReason, cookies, onBuy }) {
   const { shortNumbers } = useSettings()
   const canAfford = cookies >= upgrade.cost
 
-  let status
-  if (isBought) status = 'Comprado'
-  else if (lockReason) status = `🔒 ${lockReason}`
-  else status = `🍪 ${formatNumber(upgrade.cost, shortNumbers)} · ${description}`
+  const status = lockReason
+    ? `🔒 ${lockReason}`
+    : `🍪 ${formatNumber(upgrade.cost, shortNumbers)} · ${description}`
 
   return (
     <button
-      // Template string para juntar classes: adiciona "bought"/"locked" só quando for o caso
-      className={`shop-item ${isBought ? 'bought' : ''} ${lockReason ? 'locked' : ''}`}
-      disabled={isBought || Boolean(lockReason) || !canAfford}
+      // Template string para juntar classes: adiciona "locked" só quando for o caso
+      className={`shop-item ${lockReason ? 'locked' : ''}`}
+      disabled={Boolean(lockReason) || !canAfford}
       onClick={() => onBuy(upgrade.id)}
     >
       <span className="shop-emoji">{upgrade.emoji}</span>
@@ -135,7 +138,6 @@ function UpgradeItem({ upgrade, description, isBought, lockReason, cookies, onBu
         <strong>{upgrade.name}</strong>
         <small>{status}</small>
       </span>
-      {isBought && <span className="shop-count">✓</span>}
     </button>
   )
 }

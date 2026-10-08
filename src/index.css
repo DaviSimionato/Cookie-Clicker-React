@@ -29,6 +29,48 @@
   --item-hover: #b8653a;
 }
 
+[data-theme='forest'] {
+  --bg: radial-gradient(circle at center, #2f6b45 0%, #10261a 100%);
+  --bg-solid: #10261a;
+  --header-bg: rgba(16, 38, 26, 0.95);
+  --dialog-bg: #163323;
+  --item: #8a5a2b;
+  --item-hover: #a26c36;
+}
+
+[data-theme='sunset'] {
+  --bg: radial-gradient(circle at center, #c2563a 0%, #3a1430 100%);
+  --bg-solid: #3a1430;
+  --header-bg: rgba(58, 20, 48, 0.95);
+  --dialog-bg: #43182f;
+  --item: #7a2f4f;
+  --item-hover: #933a60;
+}
+
+[data-theme='candy'] {
+  --bg: radial-gradient(circle at center, #b35c9e 0%, #3b2a6b 100%);
+  --bg-solid: #3b2a6b;
+  --header-bg: rgba(59, 42, 107, 0.95);
+  --dialog-bg: #43306f;
+  --item: #5b6fd6;
+  --item-hover: #6f82e6;
+}
+
+[data-theme='space'] {
+  /* Várias camadas de fundo, uma por cima da outra: 3 padrões de "estrelas"
+     (um pontinho que se repete a cada 150px, 170px e 230px) por cima de um
+     degradê roxo. Tamanhos diferentes fazem as estrelas parecerem aleatórias. */
+  --bg: radial-gradient(2px 2px at 20px 30px, #fff 50%, transparent 51%) 0 0 / 150px 150px,
+    radial-gradient(2px 2px at 90px 110px, #cfc6ff 50%, transparent 51%) 0 0 / 170px 170px,
+    radial-gradient(3px 3px at 60px 70px, #fff 50%, transparent 51%) 0 0 / 230px 230px,
+    radial-gradient(circle at center, #3a1f6b 0%, #07040f 100%);
+  --bg-solid: #07040f;
+  --header-bg: rgba(12, 7, 26, 0.95);
+  --dialog-bg: #170e2e;
+  --item: #5a2d82;
+  --item-hover: #6e389e;
+}
+
 * {
   box-sizing: border-box;
 }

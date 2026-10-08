@@ -2,13 +2,23 @@ import { BUILDINGS, getCost, formatNumber, formatDecimal } from '../data/buildin
 import { getBuildingCps } from '../data/upgrades'
 import { useSettings } from '../SettingsContext'
 
+// Quantas construções "a descobrir" aparecem além da última que você tem
+const PREVIEW_AHEAD = 2
+
 // A loja não tem estado próprio: ela só MOSTRA dados que recebe por props
 // e chama onBuy quando o jogador clica. Componentes assim são fáceis de entender.
 export default function Store({ cookies, owned, upgrades, onBuy }) {
+  // Revelação progressiva (como no jogo original): aparecem as construções que
+  // você já tem e as próximas 2. findLastIndex = posição da última com owned > 0
+  // (ou -1 se nenhuma).
+  const lastOwnedIndex = BUILDINGS.findLastIndex((b) => (owned[b.id] ?? 0) > 0)
+  const visible = BUILDINGS.slice(0, lastOwnedIndex + 1 + PREVIEW_AHEAD)
+  const hiddenCount = BUILDINGS.length - visible.length
+
   return (
     <aside className="panel">
       <h2>Loja</h2>
-      {BUILDINGS.map((building) => (
+      {visible.map((building) => (
         <StoreItem
           key={building.id}
           building={building}
@@ -18,6 +28,11 @@ export default function Store({ cookies, owned, upgrades, onBuy }) {
           onBuy={onBuy}
         />
       ))}
+      {hiddenCount > 0 && (
+        <p className="panel-subtitle hidden-buildings">
+          🔒 Mais {hiddenCount} {hiddenCount === 1 ? 'construção' : 'construções'} a descobrir
+        </p>
+      )}
     </aside>
   )
 }

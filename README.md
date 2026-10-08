@@ -19,15 +19,17 @@ Clique no cookie, compre construções que produzem por você, desbloqueie upgra
 
 ### 🎮 Jogabilidade
 - **Cookie clicável**
+- **14 construções**
 - **Upgrades de clique**
 - **Upgrades de construção**
 - **Auto-click**
 - **Produção offline**
+- **84 conquistas**
 
 ### ⚙️ Configurações
-- **3 temas visuais**: 🌊 Azul, 🌙 Noite e 🍫 Chocolate
+- **7 temas visuais**: 🌊 Azul, 🌙 Noite, 🍫 Chocolate, 🌲 Floresta, 🌅 Pôr do sol, 🍬 Algodão-doce e 🌌 Galáxia
 - Números abreviados (`1,23 milhões`) ou completos (`1.234.567`)
-- Ligar e desligar animações, números flutuantes e o contador no título da aba
+- Ligar e desligar animações, números flutuantes, avisos de conquistas e o contador no título da aba
 
 ### 💾 Save
 - **Auto-save** com intervalo configurável, mais um save automático ao trocar de aba ou minimizar o app
