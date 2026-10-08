@@ -1,0 +1,56 @@
+/* ---------- Temas ----------
+   As cores ficam em "variáveis CSS". Cada tema só troca o valor delas, e todo o
+   resto do CSS usa var(--nome). O App coloca data-theme="..." no <html>. */
+:root,
+[data-theme='blue'] {
+  --bg: radial-gradient(circle at center, #3b6ea5 0%, #1d2f4a 100%);
+  --bg-solid: #1d2f4a;
+  --header-bg: rgba(24, 40, 64, 0.95);
+  --dialog-bg: #1b2a40;
+  --item: #6b4423;
+  --item-hover: #85562e;
+}
+
+[data-theme='night'] {
+  --bg: radial-gradient(circle at center, #2a2a40 0%, #0c0c14 100%);
+  --bg-solid: #0c0c14;
+  --header-bg: rgba(14, 14, 22, 0.95);
+  --dialog-bg: #181826;
+  --item: #3b3b5c;
+  --item-hover: #4c4c75;
+}
+
+[data-theme='chocolate'] {
+  --bg: radial-gradient(circle at center, #7a4a2a 0%, #3a2112 100%);
+  --bg-solid: #3a2112;
+  --header-bg: rgba(52, 30, 16, 0.95);
+  --dialog-bg: #3a2414;
+  --item: #a0522d;
+  --item-hover: #b8653a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #fff8ec;
+  background: var(--bg);
+  background-color: var(--bg-solid);
+  min-height: 100vh;
+}
+
+/* Com a janela de configurações aberta, a página de trás não rola */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
+/* Configuração "Animações" desligada: remove transições e movimentos */
+.no-animations *,
+.no-animations *::before,
+.no-animations *::after {
+  transition: none !important;
+  animation: none !important;
+}

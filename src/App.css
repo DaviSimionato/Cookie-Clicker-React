@@ -1,0 +1,559 @@
+/* No computador: o jogo ocupa exatamente a altura da tela, e cada painel lateral
+   tem sua própria barra de rolagem. Assim o cookie nunca sai do lugar. */
+.game {
+  display: flex;
+  height: 100vh;
+  height: 100dvh; /* dvh desconta as barras do navegador no celular */
+}
+
+/* Todos os botões: sem atraso de toque duplo (zoom) e sem "flash" azul ao tocar */
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- Área do cookie ---------- */
+.cookie-area {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+}
+
+.cookie-area h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  text-align: center;
+}
+
+.cps {
+  margin: 0 0 24px;
+  opacity: 0.8;
+}
+
+.big-cookie {
+  font-size: 180px;
+  line-height: 1;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.08s;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none; /* sem menu de "copiar" ao segurar o dedo no celular */
+}
+
+.big-cookie:active {
+  transform: scale(0.95);
+}
+
+.floater {
+  /* fixed = relativo à janela, então o "+1" aparece onde o mouse estiver */
+  position: fixed;
+  z-index: 10;
+  pointer-events: none;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: white;
+  text-shadow: 0 2px 4px black;
+  animation: float-up 1s ease-out forwards;
+}
+
+@keyframes float-up {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -150%);
+  }
+}
+
+/* Botão redondo só com ícone (engrenagem, fechar) */
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+/* Engrenagem no canto superior direito da área do cookie */
+.settings-button {
+  transition: transform 0.3s;
+}
+
+/* ---------- Barra fixa (auto-click + engrenagem) ---------- */
+/* position: fixed = presa na janela, não rola junto com a página */
+.dock {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 6px 6px 16px;
+  border-radius: 999px;
+  background: var(--header-bg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- Aviso "bem-vindo de volta" ---------- */
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(440px, calc(100% - 32px));
+  padding: 12px 12px 12px 16px;
+  border-radius: 12px;
+  background: var(--dialog-bg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: toast-in 0.3s ease-out;
+}
+
+.toast p {
+  flex: 1;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.toast-icon {
+  font-size: 1.8rem;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+}
+
+/* ---------- Painéis laterais (Loja e Upgrades) ---------- */
+.panel {
+  width: 320px;
+  padding: 16px;
+  /* espaço extra embaixo para a barra fixa não cobrir o último item */
+  padding-bottom: 88px;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.panel h2 {
+  margin: 0 0 8px;
+}
+
+.panel-subtitle {
+  margin: 0 0 4px;
+  opacity: 0.8;
+}
+
+/* ---------- Abas (Clique / Construções) ---------- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 4px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: var(--item);
+  opacity: 1;
+}
+
+/* Bolinha verde com quantos upgrades dá pra comprar agora naquela aba */
+.tab-badge {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #4caf50;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* ---------- Toggle (switch) ---------- */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0; /* área de toque um pouco maior */
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* O checkbox real fica invisível, mas continua funcionando (teclado, leitor de tela) */
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.2s;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked + .toggle-track {
+  background: #4caf50;
+}
+
+.toggle input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(20px);
+}
+
+.toggle input:focus-visible + .toggle-track {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* ---------- Itens compráveis (usados nos dois painéis) ---------- */
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--item);
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.shop-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Upgrade já comprado: verde e sem a aparência "apagada" de indisponível */
+.shop-item.bought {
+  background: #2e6b3a;
+  opacity: 1;
+  cursor: default;
+}
+
+/* Upgrade bloqueado (faltam construções): cinza e com borda tracejada */
+.shop-item.locked {
+  background: #3d3530;
+  outline: 1px dashed rgba(255, 255, 255, 0.3);
+  outline-offset: -1px;
+  opacity: 0.7;
+}
+
+.shop-emoji {
+  font-size: 2rem;
+}
+
+.shop-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.shop-count {
+  font-size: 1.6rem;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+/* ---------- Janela de configurações ---------- */
+.settings {
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  background: var(--dialog-bg);
+  color: inherit;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* ::backdrop é o fundo escuro atrás do <dialog> aberto */
+.settings::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 20px 20px;
+}
+
+/* Cabeçalho grudado no topo enquanto o conteúdo rola */
+.settings-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 8px;
+  background: var(--dialog-bg);
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.settings-section h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+.settings-section p {
+  margin: 0;
+}
+
+/* Linha "texto à esquerda, controle à direita" (quebra linha se não couber) */
+.settings-row,
+.settings-section .toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.muted {
+  opacity: 0.7;
+}
+
+.tabs.segmented {
+  margin: 0;
+}
+
+.tabs.segmented .tab {
+  flex: none;
+  padding: 6px 10px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-button {
+  flex: 1;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--item);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.action-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.action-button.danger {
+  flex: none;
+  background: #7a2a2a;
+}
+
+.code-box {
+  width: 100%;
+  min-height: 70px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: inherit;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  resize: vertical;
+  word-break: break-all;
+}
+
+.settings-message {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.settings-message.success {
+  background: rgba(76, 175, 80, 0.25);
+}
+
+.settings-message.error {
+  background: rgba(220, 70, 70, 0.3);
+}
+
+/* Efeitos de "passar o mouse" só em aparelhos que TÊM mouse.
+   No celular, o :hover "gruda" depois do toque e o botão fica com cara de selecionado. */
+@media (hover: hover) {
+  .big-cookie:hover {
+    transform: scale(1.07);
+  }
+  .big-cookie:hover:active {
+    transform: scale(0.95);
+  }
+  .icon-button:hover {
+    background: rgba(0, 0, 0, 0.4);
+  }
+  .settings-button:hover {
+    transform: rotate(60deg);
+  }
+  .action-button:hover:not(:disabled) {
+    background: var(--item-hover);
+  }
+  .action-button.danger:hover {
+    background: #a33a3a;
+  }
+  .shop-item:hover:not(:disabled) {
+    background: var(--item-hover);
+  }
+  .tab:hover:not(.active) {
+    opacity: 1;
+  }
+}
+
+/* Telas médias: painéis um pouco mais estreitos */
+@media (max-width: 1000px) {
+  .panel {
+    width: 270px;
+  }
+  .big-cookie {
+    font-size: 150px;
+  }
+}
+
+/* ---------- Celular ---------- */
+/* Tudo em uma coluna. A área do cookie fica "grudada" no topo (sticky), então dá
+   para rolar a loja e os upgrades e continuar clicando no cookie. */
+@media (max-width: 700px) {
+  .game {
+    flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
+    /* espaço para a barra de gestos do iPhone/Android */
+    /* espaço para a barra fixa + barra de gestos do iPhone/Android */
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+
+  .cookie-area {
+    order: -1; /* aparece antes da Loja, mesmo vindo depois no JSX */
+    flex: none;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    gap: 0;
+    padding: 12px 16px;
+    background: var(--header-bg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .cookie-area h1 {
+    font-size: 1.6rem;
+  }
+
+  .cps {
+    margin: 0 0 4px;
+    font-size: 0.9rem;
+  }
+
+  .big-cookie {
+    font-size: 110px;
+  }
+
+  .dock {
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  /* No celular, a janela ocupa quase a tela toda */
+  .settings {
+    width: calc(100% - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+
+  .settings-content {
+    padding: 0 16px 16px;
+  }
+
+  .panel {
+    width: auto;
+    overflow-y: visible;
+    padding-bottom: 16px;
+  }
+
+  .floater {
+    font-size: 1.2rem;
+  }
+}
