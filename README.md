@@ -65,4 +65,7 @@ src/
 
 Projeto feito para aprender React 🍪
 
+<sub>Projeto de estudo, sem afiliação com o <a href="https://orteil.dashnet.org/cookieclicker/">Cookie Clicker</a> original, de Orteil.<br>
+Código sob a licença <a href="LICENSE">MIT</a>.</sub>
+
 </div>
