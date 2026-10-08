@@ -19,7 +19,7 @@ Clique no cookie, compre construções que produzem por você, desbloqueie upgra
 
 ### 🎮 Jogabilidade
 - **Cookie clicável**
-- **14 construções**
+- **14 construções**, com compra e venda em lote (1, 5, 10, 50 ou 100)
 - **Upgrades de clique**
 - **Upgrades de construção**
 - **Auto-click**

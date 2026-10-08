@@ -5,6 +5,7 @@ import { encodeSave, decodeSave } from '../data/save'
 import { formatNumber } from '../data/buildings'
 import Modal from './Modal'
 import Toggle from './Toggle'
+import SegmentedControl from './SegmentedControl'
 
 export default function SettingsModal({
   open,
@@ -143,6 +144,7 @@ export default function SettingsModal({
         <div className="settings-row">
           <span>Salvar automaticamente a cada</span>
           <SegmentedControl
+            label="Intervalo do auto-save"
             options={AUTOSAVE_OPTIONS.map((s) => ({ value: s, label: `${s}s` }))}
             value={settings.autosaveSeconds}
             onChange={(value) => onChangeSetting('autosaveSeconds', value)}
@@ -239,25 +241,6 @@ function ThemePicker({ value, onChange }) {
             style={{ '--a': theme.preview[0], '--b': theme.preview[1] }}
           />
           {theme.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-// Grupo de botões onde só um fica selecionado (reaproveita o visual das abas)
-function SegmentedControl({ options, value, onChange }) {
-  return (
-    <div className="tabs segmented" role="radiogroup">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          role="radio"
-          aria-checked={option.value === value}
-          className={`tab ${option.value === value ? 'active' : ''}`}
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
         </button>
       ))}
     </div>

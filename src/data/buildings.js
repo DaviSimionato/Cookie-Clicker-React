@@ -25,6 +25,35 @@ export function getCost(building, owned) {
   return Math.ceil(building.baseCost * Math.pow(1.15, owned))
 }
 
+// Quantidades disponíveis nos seletores de compra e venda da Loja
+export const BULK_AMOUNTS = [1, 5, 10, 50, 100]
+
+// Quanto da compra volta ao vender uma unidade (0.5 = 50%; no jogo original é 25%)
+export const SELL_RATE = 0.5
+
+// Preço de comprar várias de uma vez: cada unidade custa o preço "da vez dela".
+// Ex.: tendo 10 e comprando 3 = preço da 11ª + preço da 12ª + preço da 13ª
+export function getBulkCost(building, owned, amount) {
+  let total = 0
+  for (let i = 0; i < amount; i++) total += getCost(building, owned + i)
+  return total
+}
+
+// Quantas unidades dá para vender: o pedido, ou todas se tiver menos que isso
+export function getSellAmount(owned, amount) {
+  return Math.min(owned, amount)
+}
+
+// Quanto se recebe vendendo: cada unidade devolve SELL_RATE do preço que ela
+// custou. Ex.: tendo 10 e vendendo 2 = (preço da 10ª + preço da 9ª) × 50%
+export function getSellValue(building, owned, amount) {
+  let total = 0
+  for (let i = 1; i <= getSellAmount(owned, amount); i++) {
+    total += getCost(building, owned - i) * SELL_RATE
+  }
+  return total
+}
+
 // Nomes das escalas numéricas, do maior para o menor
 const NUMBER_UNITS = [
   [1e33, 'decilhões'],

@@ -291,6 +291,11 @@ button {
 }
 
 /* Upgrade bloqueado (faltam construções): cinza e com borda tracejada */
+/* Modo de venda: itens avermelhados, para não confundir com a compra */
+.shop-item.selling {
+  background: #7a3535;
+}
+
 .shop-item.locked {
   background: #3d3530;
   outline: 1px dashed rgba(255, 255, 255, 0.3);
@@ -396,6 +401,31 @@ button {
 .tabs.segmented .tab {
   flex: none;
   padding: 6px 10px;
+}
+
+/* Variante "fill": os botões dividem a largura toda igualmente (usada na Loja) */
+.tabs.segmented.fill .tab {
+  flex: 1;
+  padding: 6px 4px;
+}
+
+/* ---------- Controles da Loja (modo + quantidade) ---------- */
+.store-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+/* "×10" ao lado do nome da construção */
+.bulk-tag {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 0.75rem;
+  font-weight: normal;
+  vertical-align: middle;
 }
 
 .button-row {
@@ -656,6 +686,9 @@ button {
   }
   .shop-item:hover:not(:disabled) {
     background: var(--item-hover);
+  }
+  .shop-item.selling:hover:not(:disabled) {
+    background: #934242;
   }
   .tab:hover:not(.active) {
     opacity: 1;

@@ -17,7 +17,7 @@ export const THEMES = [
 export const AUTOSAVE_OPTIONS = [5, 15, 30, 60] // segundos
 
 export const DEFAULT_SETTINGS = {
-  theme: 'blue',
+  theme: 'space', // Galáxia: tema de quem abre o jogo pela primeira vez
   shortNumbers: true, // "1,23 milhões" em vez de "1.234.567"
   showFloaters: true, // números "+1" ao clicar
   animations: true,

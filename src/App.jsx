@@ -10,7 +10,15 @@ import Credits from './components/Credits'
 import Toggle from './components/Toggle'
 import WelcomeBack from './components/WelcomeBack'
 import { SettingsContext } from './SettingsContext'
-import { BUILDINGS, getCost, formatNumber, formatDecimal, formatValue } from './data/buildings'
+import {
+  BUILDINGS,
+  getBulkCost,
+  getSellAmount,
+  getSellValue,
+  formatNumber,
+  formatDecimal,
+  formatValue,
+} from './data/buildings'
 import { getUpgradeById, getClickValue, getTotalCps, isUnlocked } from './data/upgrades'
 import { ACHIEVEMENTS } from './data/achievements'
 import {
@@ -326,17 +334,36 @@ export default function App() {
     }, 1000)
   }
 
-  function handleBuyBuilding(buildingId) {
+  // Compra "amount" unidades de uma vez (ou nenhuma, se não der para pagar todas)
+  function handleBuyBuilding(buildingId, amount) {
     setGame((prev) => {
       const building = BUILDINGS.find((b) => b.id === buildingId)
       const count = prev.owned[buildingId] ?? 0
-      const cost = getCost(building, count)
+      const cost = getBulkCost(building, count, amount)
       if (prev.cookies < cost) return prev // sem dinheiro: não muda nada
 
       return {
         ...prev,
         cookies: prev.cookies - cost,
-        owned: { ...prev.owned, [buildingId]: count + 1 },
+        owned: { ...prev.owned, [buildingId]: count + amount },
+      }
+    })
+  }
+
+  // Vende até "amount" unidades (todas, se tiver menos que isso).
+  // Os cookies recebidos NÃO contam em totalCookies: eles não foram assados.
+  // Upgrades já comprados continuam valendo, mesmo ficando abaixo do requisito.
+  function handleSellBuilding(buildingId, amount) {
+    setGame((prev) => {
+      const building = BUILDINGS.find((b) => b.id === buildingId)
+      const count = prev.owned[buildingId] ?? 0
+      const sold = getSellAmount(count, amount)
+      if (sold === 0) return prev
+
+      return {
+        ...prev,
+        cookies: prev.cookies + getSellValue(building, count, amount),
+        owned: { ...prev.owned, [buildingId]: count - sold },
       }
     })
   }
@@ -370,7 +397,13 @@ export default function App() {
   return (
     <SettingsContext value={settings}>
       <div className="game">
-        <Store cookies={cookies} owned={owned} upgrades={upgrades} onBuy={handleBuyBuilding} />
+        <Store
+          cookies={cookies}
+          owned={owned}
+          upgrades={upgrades}
+          onBuy={handleBuyBuilding}
+          onSell={handleSellBuilding}
+        />
         <main className="cookie-area">
           <h1>{formatNumber(cookies, settings.shortNumbers)} cookies</h1>
           <p className="cps">por segundo: {formatDecimal(cps)}</p>
